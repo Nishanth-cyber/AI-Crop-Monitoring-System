@@ -1,8 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import img6 from "../../assets/Img_6.jpeg";
 
 export default function CropForm() {
   const [loading, setLoading] = useState(false);
+  const [climate, setClimate] = useState({ temperature: "", humidity: "" });
+
+  // Auto-fetch climate data on page load
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const { latitude, longitude } = pos.coords;
+
+      try {
+        const res = await fetch(`http://localhost:8000/get_climate?lat=${latitude}&lon=${longitude}`);
+        const data = await res.json();
+        setClimate({ temperature: data.temperature, humidity: data.humidity });
+      } catch (err) {
+        console.error("❌ Failed to fetch climate data", err);
+      }
+    });
+  }, []);
 
   async function predictCrop(e) {
     e.preventDefault();
@@ -10,28 +26,33 @@ export default function CropForm() {
 
     const crop = e.target.crop.value;
     const season = e.target.season.value;
-    const temperature = parseFloat(e.target.temperature.value);
-    const humidity = parseFloat(e.target.humidity.value);
     const ph = parseFloat(e.target.ph.value);
     const avg_water = parseFloat(e.target.avg_water.value);
     const sowing_date = e.target.sowing_date.value;
 
     const response = await fetch("http://localhost:8000/predict_crop", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ crop, season, temperature, humidity, ph, avg_water, sowing_date }),
-});
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        crop,
+        season,
+        temperature: climate.temperature,
+        humidity: climate.humidity,
+        ph,
+        avg_water,
+        sowing_date
+      }),
+    });
 
-if (!response.ok) {
-  const error = await response.json();
-  alert(`❌ Error: ${error.detail}`);
-  setLoading(false);
-  return;
-}
+    if (!response.ok) {
+      const error = await response.json();
+      alert(`❌ Error: ${error.detail}`);
+      setLoading(false);
+      return;
+    }
 
-const data = await response.json();
-alert(`✅ Water Needed: ${data.water_required} L/ha\n📅 Harvest Date: ${data.harvest_date}`);
-
+    const data = await response.json();
+    alert(`✅ Water Needed: ${data.water_required} L/ha\n📅 Days until Harvest: ${data.days_until_harvest}`);
     setLoading(false);
   }
 
@@ -50,11 +71,31 @@ alert(`✅ Water Needed: ${data.water_required} L/ha\n📅 Harvest Date: ${data.
             <option value="spring">spring</option>
             <option value="summer">summer</option>
           </select>
-          <input name="temperature" type="number" step="any" placeholder=" Temperature (°C)" required />
-          <input name="humidity" type="number" step="any" placeholder=" Humidity (%)" required />
+          
+          {/* Auto-filled fields */}
+          <input
+            name="temperature"
+            type="number"
+            step="any"
+            value={climate.temperature}
+            placeholder=" Temperature (°C)"
+            readOnly
+          />
+          <input
+            name="humidity"
+            type="number"
+            step="any"
+            value={climate.humidity}
+            placeholder=" Humidity (%)"
+            readOnly
+          />
+
           <input name="ph" type="number" step="any" placeholder=" Soil pH" required />
           <input name="avg_water" type="number" step="any" placeholder=" Avg Water (L/ha)" required />
-          <button type="submit" disabled={loading}>{loading ? " Predicting..." : "🔍 Predict Now"}</button>
+
+          <button type="submit" disabled={loading}>
+            {loading ? " Predicting..." : "🔍 Predict Now"}
+          </button>
         </form>
       </div>
     </div>
