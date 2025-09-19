@@ -10,6 +10,12 @@ from PIL import Image
 import pandas as pd
 import os
 import uvicorn
+import tensorflow as tf
+import io
+import google.generativeai as genai
+from dotenv import load_dotenv
+import numpy as np
+from scipy import ndimage
 
 # ========== INIT APP ==========
 app = FastAPI()
@@ -55,6 +61,34 @@ try:
         row['Pest Name'].lower().strip(): row['Most Commonly Used Pesticides']
         for _, row in pesticide_df.iterrows()
     }
+
+    # Load TensorFlow disease prediction model
+    disease_model_path = os.path.join(MODEL_DIR, "crop_disease.h5")
+    model_disease = tf.keras.models.load_model(disease_model_path)
+
+    # Disease class labels
+    global disease_class_labels
+    disease_class_labels = {
+        0: "Apple Apple_scab", 1: "Apple Black rot", 2: "Apple Cedar_apple_rust", 3: "Apple healthy",
+        4: "Blueberry healthy", 5: "Cherry (including sour) Powdery mildew", 6: "Cherry (including sour) healthy",
+        7: "Corn (maize) Cercospora leaf spot Gray leaf spot", 8: "Corn (maize) Common rust", 9: "Corn (maize) Northern Leaf Blight",
+        10: "Corn (maize) healthy", 11: "Grape Black rot", 12: "Grape Leaf blight (Isariopsis Leaf Spot)", 13: "Grape healthy",
+        14: "Orange Haunglongbing (Citrus greening)", 15: "Peach Bacterial spot", 16: "Peach healthy",
+        17: "Pepper (bell) Bacterial spot", 18: "Pepper (bell) healthy", 19: "Potato Early blight",
+        20: "Potato Late blight", 21: "Potato healthy", 22: "Raspberry healthy", 23: "Soybean healthy",
+        24: "Squash Powdery mildew", 25: "Strawberry Leaf scorch", 26: "Strawberry healthy",
+        27: "Tomato Bacterial spot", 28: "Tomato Late blight", 29: "Tomato Leaf Mold",
+        30: "Tomato Septoria leaf spot", 31: "Tomato Spider mites (Two-spotted spider mite)",
+        32: "Tomato Target Spot", 33: "Tomato Yellow Leaf Curl Virus", 34: "Tomato Mosaic Virus",
+        35: "Tomato healthy"
+    }
+
+    # Initialize Gemini AI model for disease explanation
+    load_dotenv()
+    API_KEY = os.getenv("API_KEY")
+    genai.configure(api_key=API_KEY)
+    aimodel = genai.GenerativeModel('gemini-2.0-flash')
+    chat = aimodel.start_chat()
 
     print("✅ All models loaded successfully!")
 except Exception as e:
@@ -110,6 +144,8 @@ async def predict_crop(request: CropRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+
 # ✅ Predict pest and recommend pesticide
 @app.post("/predict_pest")
 async def predict_pest(image: UploadFile = File(...)):
@@ -134,6 +170,82 @@ async def predict_pest(image: UploadFile = File(...)):
         return JSONResponse(content={"pest": pest, "pesticide": pesticide})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ✅ Predict nutrient deficiency
+
+@app.post("/predict_nutrient_deficiency")
+async def predict_nutrient_deficiency(image: UploadFile = File(...)):
+    try:
+        # Load image from upload
+        input_image = Image.open(image.file).convert("RGB")
+        img_array = np.array(input_image)
+
+        # Convert to grayscale
+        if len(img_array.shape) == 3:
+            img_gray = img_array.mean(axis=2)
+        else:
+            img_gray = img_array
+
+        # Normalize to 0-1
+        img_norm = (img_gray - img_gray.min()) / (img_gray.max() - img_gray.min())
+
+        # Medium-intensity "red" range in jet colormap
+        medium_red_min = 0.75
+        medium_red_max = 0.9
+        mask = (img_norm >= medium_red_min) & (img_norm <= medium_red_max)
+
+        # Label connected regions
+        labeled, num_features = ndimage.label(mask)
+        slices = ndimage.find_objects(labeled)
+
+        # Prepare region info for response
+        regions = []
+        for sl in slices:
+            y, x = sl
+            regions.append({
+                "x_start": int(x.start),
+                "x_stop": int(x.stop),
+                "y_start": int(y.start),
+                "y_stop": int(y.stop)
+            })
+
+        return JSONResponse(content={
+            "medium_red_region_count": len(regions),
+            "regions": regions
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ✅ Predict disease and provide explanation
+@app.post("/disease-prediction")
+async def predict_disease(image: UploadFile = File(...)):
+    try:
+        # Validate file type
+        if not image.filename.lower().endswith(("png", "jpg", "jpeg")):
+            raise HTTPException(status_code=400, detail="Invalid file type")
+
+        # Read image file into memory
+        img_bytes = await image.read()
+        img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+        img = img.resize((100, 100))
+        img_array = np.array(img) / 255.0
+        img_array = np.expand_dims(img_array, axis=0).astype("float32")
+
+        prediction = model_disease.predict(img_array)
+        predicted_class = int(np.argmax(prediction))
+        predicted_label = disease_class_labels.get(predicted_class, "Unknown Disease")
+        explain = chat_bot(predicted_label)
+
+        return JSONResponse(content={"disease": predicted_label, "explain": explain})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+def chat_bot(dis):
+    query = f"Explain about disease {dis} and give the precaution in 5 lines clearly in simple way"
+    response = chat.send_message(query)
+    result = response.text
+    return result
 
 # ========== RUN ==========
 if __name__ == "__main__":

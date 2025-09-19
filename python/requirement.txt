@@ -7,3 +7,6 @@ uvicorn
 pillow
 python-multipart
 scikit-learn
+tensorflow
+google-generativeai
+python-dotenv
