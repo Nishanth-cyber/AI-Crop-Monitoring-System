@@ -7,7 +7,6 @@ export default function Predictions() {
     <section className="predictions" id="predict">
       <h2>Make Predictions</h2>
       <CropForm />
-      <PestForm />
     </section>
   );
 }
