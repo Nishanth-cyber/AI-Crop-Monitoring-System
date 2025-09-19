@@ -14,7 +14,9 @@ const connectDB = require('./config/db');
 connectDB();
 
 const user = require('./Router/userRouter');
+const climate = require('./Router/ClimateRouter');
 app.use('/user',user);
+app.use('/climate',climate)
 app.listen(port,()=>{
     console.log(`server is running on http:localhost/${port}`);
 })

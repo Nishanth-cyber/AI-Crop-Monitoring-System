@@ -119,20 +119,6 @@ app = FastAPI()
 
 OPENWEATHER_API_KEY = "your_api_key_here"
 
-@app.get("/get_climate")
-def get_climate(lat: float = Query(...), lon: float = Query(...)):
-    try:
-        url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHER_API_KEY}&units=metric"
-        res = requests.get(url)
-        data = res.json()
-
-        return JSONResponse(content={
-            "temperature": data["main"]["temp"],
-            "humidity": data["main"]["humidity"]
-        })
-    except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
-
 
 # ✅ Predict crop water and harvest date
 @app.post("/predict_crop")
