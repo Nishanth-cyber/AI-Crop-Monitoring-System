@@ -1,0 +1,140 @@
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+import joblib
+import torch
+import torch.nn as nn
+from torchvision import transforms, models
+from PIL import Image
+import pandas as pd
+import os
+import uvicorn
+
+# ========== INIT APP ==========
+app = FastAPI()
+
+# Allow CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ========== PATH SETUP ==========
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+MODEL_DIR = os.path.join(BASE_DIR, ".", "models")
+DATA_DIR = os.path.join(BASE_DIR, ".", "data")
+
+# ========== LOAD MODELS ==========
+print("✅ Loading models...")
+try:
+    water_model = joblib.load(os.path.join(MODEL_DIR, "water_model.pkl"))
+    harvest_model = joblib.load(os.path.join(MODEL_DIR, "harvest_model.pkl"))
+    crop_encoder = joblib.load(os.path.join(MODEL_DIR, "le_crop.pkl"))
+    season_encoder = joblib.load(os.path.join(MODEL_DIR, "le_season.pkl"))
+
+    # Load CNN pest detection model
+    pest_model = models.resnet18(weights=None)
+    pest_model.fc = nn.Linear(pest_model.fc.in_features, 132)
+    pest_model.load_state_dict(torch.load(
+        os.path.join(MODEL_DIR, "pest_cnn_model.pth"),
+        map_location=torch.device("cpu")
+    ))
+    pest_model.eval()
+
+    # Load pest class names
+    with open(os.path.join(DATA_DIR, "pest_classes.txt"), "r") as f:
+        pest_classes = [line.strip() for line in f.readlines()]
+
+    # Load pesticide mapping
+    pesticide_df = pd.read_csv(os.path.join(DATA_DIR, "Pesticides.csv"))
+    pest_map = {
+        row['Pest Name'].lower().strip(): row['Most Commonly Used Pesticides']
+        for _, row in pesticide_df.iterrows()
+    }
+
+    print("✅ All models loaded successfully!")
+except Exception as e:
+    print("❌ Error loading models:", str(e))
+    raise RuntimeError(f"Error loading models: {str(e)}")
+
+# ========== REQUEST MODELS ==========
+class CropRequest(BaseModel):
+    crop: str
+    season: str
+    temperature: float
+    humidity: float
+    ph: float
+    avg_water: float
+
+# ========== ROUTES ==========
+
+# ✅ Predict crop water and harvest date
+@app.post("/predict_crop")
+async def predict_crop(request: CropRequest):
+    try:
+        # Encode categorical inputs
+        crop_encoded = crop_encoder.transform([request.crop])[0]
+        season_encoded = season_encoder.transform([request.season])[0]
+
+        # ---------------- WATER MODEL ----------------
+        water_features = [[
+            crop_encoded,
+            season_encoded,
+            request.temperature,
+            request.humidity,
+            request.ph,
+            request.avg_water
+        ]]
+        water_pred = water_model.predict(water_features)[0]
+
+        # ---------------- HARVEST MODEL ----------------
+        harvest_features = [[
+            crop_encoded,
+            season_encoded,
+            request.temperature,
+            request.humidity,
+            request.ph,
+            water_pred  # Predicted water requirement is input for harvest model
+        ]]
+        harvest_pred = harvest_model.predict(harvest_features)[0]
+
+        return JSONResponse(content={
+            "water_required": round(float(water_pred), 2),
+            "days_until_harvest": round(float(harvest_pred), 0)
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ✅ Predict pest and recommend pesticide
+@app.post("/predict_pest")
+async def predict_pest(image: UploadFile = File(...)):
+    try:
+        img = Image.open(image.file).convert("RGB")
+        transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406],
+                                 [0.229, 0.224, 0.225])
+        ])
+        img_tensor = transform(img).unsqueeze(0)
+
+        with torch.no_grad():
+            outputs = pest_model(img_tensor)
+            _, predicted = torch.max(outputs.data, 1)
+            pest = pest_classes[predicted.item()]
+            pest_key = pest.lower().strip()
+
+            pesticide = pest_map.get(pest_key, "No Recommendation")
+
+        return JSONResponse(content={"pest": pest, "pesticide": pesticide})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ========== RUN ==========
+if __name__ == "__main__":
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
