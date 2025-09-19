@@ -16,6 +16,12 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 import numpy as np
 from scipy import ndimage
+from scipy import ndimage
+from datetime import datetime
+import tempfile
+import os
+import cv2
+from fastapi.responses import FileResponse
 
 # ========== INIT APP ==========
 app = FastAPI()
@@ -174,48 +180,62 @@ async def predict_pest(image: UploadFile = File(...)):
 
 # ✅ Predict nutrient deficiency
 
+
 @app.post("/predict_nutrient_deficiency")
-async def predict_nutrient_deficiency(image: UploadFile = File(...)):
+async def predict_nutrient_deficiency_video(video: UploadFile = File(...)):
     try:
-        # Load image from upload
-        input_image = Image.open(image.file).convert("RGB")
-        img_array = np.array(input_image)
+        # Save uploaded video temporarily
+        temp_input = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+        temp_input.write(await video.read())
+        temp_input.close()
 
-        # Convert to grayscale
-        if len(img_array.shape) == 3:
-            img_gray = img_array.mean(axis=2)
-        else:
-            img_gray = img_array
+        # Generate timestamped output filename
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        temp_output_name = f"processed_video_{timestamp}.mp4"
+        temp_output_path = os.path.join(tempfile.gettempdir(), temp_output_name)
 
-        # Normalize to 0-1
-        img_norm = (img_gray - img_gray.min()) / (img_gray.max() - img_gray.min())
+        # Open video
+        cap = cv2.VideoCapture(temp_input.name)
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        out = cv2.VideoWriter(temp_output_path, fourcc, fps, (width, height))
 
-        # Medium-intensity "red" range in jet colormap
-        medium_red_min = 0.75
-        medium_red_max = 0.9
-        mask = (img_norm >= medium_red_min) & (img_norm <= medium_red_max)
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
 
-        # Label connected regions
-        labeled, num_features = ndimage.label(mask)
-        slices = ndimage.find_objects(labeled)
+            # Convert frame to grayscale
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            img_norm = (gray - gray.min()) / (gray.max() - gray.min())
 
-        # Prepare region info for response
-        regions = []
-        for sl in slices:
-            y, x = sl
-            regions.append({
-                "x_start": int(x.start),
-                "x_stop": int(x.stop),
-                "y_start": int(y.start),
-                "y_stop": int(y.stop)
-            })
+            # Medium-red mask (normalized 0.75-0.9)
+            mask = (img_norm >= 0.75) & (img_norm <= 0.9)
 
-        return JSONResponse(content={
-            "medium_red_region_count": len(regions),
-            "regions": regions
-        })
+            # Label connected regions
+            labeled, num_features = ndimage.label(mask)
+            slices = ndimage.find_objects(labeled)
+
+            # Draw black boxes on original frame
+            for sl in slices:
+                y, x = sl
+                cv2.rectangle(frame, (x.start, y.start), (x.stop, y.stop), (0,0,0), 2)
+
+            # Write processed frame to output video
+            out.write(frame)
+
+        cap.release()
+        out.release()
+
+        # Return processed video with timestamped filename
+        return FileResponse(temp_output_path, media_type='video/mp4', filename=temp_output_name)
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+    
 
 # ✅ Predict disease and provide explanation
 @app.post("/disease-prediction")

@@ -10,3 +10,5 @@ scikit-learn
 tensorflow
 google-generativeai
 python-dotenv
+opencv-python
+scipy
