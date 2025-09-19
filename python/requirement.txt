@@ -6,3 +6,4 @@ torchvision
 uvicorn
 pillow
 python-multipart
+scikit-learn
