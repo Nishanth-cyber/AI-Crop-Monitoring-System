@@ -4,11 +4,11 @@ import { useNavigate } from "react-router-dom";
 
 export default function Header() {
   const navigate = useNavigate();
-  const username = localStorage.getItem("username"); // Get username
+  const username = localStorage.getItem("username"); 
 
   const handleLogout = () => {
-    localStorage.clear(); // Clear all localStorage data
-    navigate("/login");   // Redirect to login page
+    localStorage.clear(); 
+    navigate("/login");   
   };
 
   return (

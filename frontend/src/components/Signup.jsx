@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Signup = () => {
   const [form, setForm] = useState({
@@ -7,6 +8,7 @@ const Signup = () => {
     password: "",
   });
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -15,7 +17,7 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:5001/user/signup", { // Change /users/ to /user/
+      const res = await fetch("http://localhost:5001/user/register", { // Change /users/ to /user/
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -23,6 +25,8 @@ const Signup = () => {
       const data = await res.json();
       if (res.ok) {
         setMessage("Signup successful! Please login.");
+        setMessage("Login successful!");
+        navigate("/");
       } else {
         setMessage(data.message || "Signup failed.");
       }

@@ -3,9 +3,10 @@ import Header from "./components/Header";
 import Hero from "./components/Hero";
 import Features from "./components/Features";
 import Predictions from "./components/Predictions/index.jsx";
-import Login from "./components/login.jsx";
-import Signup from "./components/Signup";
+import Login from "./components/Login.jsx";
+import Signup from "./components/Signup.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Dashboard from './components/Dashboard.jsx';
 import "./styles.css";
 
 function Home() {

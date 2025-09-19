@@ -16,22 +16,23 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:5001/users/login", {
+      const res = await fetch("http://localhost:5001/user/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       const data = await res.json();
       if (res.ok) {
+        localStorage.setItem("token", data.user); 
         setMessage("Login successful!");
-        navigate("/"); // Redirect to home page
+        navigate("/"); 
       } else {
         setMessage(data.message || "Login failed.");
       }
     } catch (err) {
       setMessage("Error connecting to server.");
     }
-  };
+};
 
   return (
     <div className="auth-container">
