@@ -8,7 +8,6 @@ import Login from "./components/Login";
 import Signup from "./components/Signup";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Crophealth from "./components/Predictions/Cropheath";
-import "./styles/global.css";
 
 function App() {
   return (
