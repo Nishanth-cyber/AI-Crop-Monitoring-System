@@ -1,38 +1,28 @@
-import { Routes, Route } from "react-router-dom";
-import Header from "./components/Header";
+import { Routes, Route, Navigate } from "react-router-dom";
+import Layout from "./components/Layout";
 import Hero from "./components/Hero";
-import Features from "./components/Features";
-import Predictions from "./components/Predictions/index.jsx";
-import Login from "./components/Login.jsx";
-import Signup from "./components/Signup.jsx";
+import DiseaseDetection from "./components/Predictions/Disease";
+import Predictions from "./components/Predictions";
+import PestAnalysis from "./components/Predictions/PestForm";
+import Login from "./components/Login";
+import Signup from "./components/Signup";
 import ProtectedRoute from "./components/ProtectedRoute";
-import Dashboard from './components/Dashboard.jsx';
-import "./styles.css";
-
-function Home() {
-  return (
-    <>
-      <Header />
-      <Hero />
-      <Features />
-      <Predictions />
-    </>
-  );
-}
+import Crophealth from "./components/Predictions/Cropheath";
+import "./styles/global.css";
 
 function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Home />
-          </ProtectedRoute>
-        }
-      />
+      <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+        <Route index element={<Hero />} />
+        <Route path="predict" element={<Predictions />} />
+        <Route path="pest" element={<PestAnalysis />} />
+        <Route path="disease" element={<DiseaseDetection />} />
+        <Route path="crophea" element={<Crophealth />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
