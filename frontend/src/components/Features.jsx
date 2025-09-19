@@ -1,12 +1,9 @@
 import React from "react";
-import "../styles/features.css"; // We'll create this CSS file
-
-// Note: You'll need to import your images as shown in your original code
-// I'm using placeholder images for demonstration purposes
-const img2 = "https://images.unsplash.com/photo-1592492159418-2fda4a47d2a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80";
-const img3 = "https://images.unsplash.com/photo-1595248842562-e0f2980ed6d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80";
-const img4 = "https://images.unsplash.com/photo-1573767291321-c9afc944a56a?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80";
-const img5 = "https://images.unsplash.com/photo-1624969861096-51f5d7c727c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80";
+import "../styles/features.css";
+import img2 from "../assets/Img_1.jpeg";
+import img3 from "../assets/Img_3.jpeg";
+import img4 from "../assets/Img_4.jpeg";
+import img5 from "../assets/Img_6.jpeg";
 
 export default function Features() {
   const features = [

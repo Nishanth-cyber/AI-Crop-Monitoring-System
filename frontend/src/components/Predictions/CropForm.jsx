@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import img6 from "../../assets/Img_6.jpeg";
+import "./cropform.css"; // We'll create this CSS file
 
 export default function CropForm() {
   const [loading, setLoading] = useState(false);
@@ -14,10 +15,10 @@ export default function CropForm() {
 
   // Determine season from month
   const getSeason = (month) => {
-    if ([12, 1, 2].includes(month)) return "winter";
-    if ([3, 4, 5].includes(month)) return "spring";
-    if ([6, 7, 8].includes(month)) return "summer";
-    return "autumn";
+    if ([12, 1, 2].includes(month)) return "Winter";
+    if ([3, 4, 5].includes(month)) return "Spring";
+    if ([6, 7, 8].includes(month)) return "Summer";
+    return "Autumn";
   };
 
   // Auto-fetch climate + auto-fill season/date
@@ -44,7 +45,7 @@ export default function CropForm() {
           const now = new Date();
           const season = getSeason(now.getMonth() + 1);
           const today = now.toISOString().split("T")[0]; // YYYY-MM-DD
-          const time = now.toLocaleTimeString();
+          const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
           setClimate({
             temperature: data.temperature || "",
@@ -106,65 +107,120 @@ export default function CropForm() {
   }
 
   return (
-    <div className="card split-form">
-      <div className="form-image">
-        <img src={img6} alt="Form Illustration" />
-      </div>
+    <div className="crop-form-container">
+      <div className="crop-form-card">
+        <div className="form-image-section">
+          <img src={img6} alt="Agricultural field with crops" className="form-image" />
+          <div className="image-overlay">
+            <h2>🌱 Harvest & Water Intelligence</h2>
+            <p>Get accurate predictions for your crop water needs and harvest timing</p>
+          </div>
+        </div>
 
-      <div className="form-content">
-        <h3>🌱 Harvest & Water Intelligence</h3>
+        <div className="form-content-section">
+          <div className="form-header">
+            <h3>🌱 Crop Prediction Form</h3>
+            <p>Enter your crop details for intelligent predictions</p>
+          </div>
 
-        {climateLoading ? (
-          <p>⏳ Waiting for location & climate data...</p>
-        ) : (
-          <form onSubmit={predictCrop}>
-            <input name="crop" type="text" placeholder="Crop Name" required />
+          {climateLoading ? (
+            <div className="loading-container">
+              <div className="loading-spinner"></div>
+              <p>Getting your location and climate data...</p>
+            </div>
+          ) : (
+            <form onSubmit={predictCrop} className="crop-form">
+              <div className="form-group">
+                <label htmlFor="crop">Crop Name</label>
+                <input 
+                  id="crop"
+                  name="crop" 
+                  type="text" 
+                  placeholder="Enter crop name" 
+                  required 
+                />
+              </div>
 
-            {/* Auto-filled fields */}
-            <input type="text" value={climate.season} readOnly />
-            <input type="date" value={climate.date} readOnly />
-            <input type="text" value={climate.time} readOnly />
+              <div className="auto-fill-grid">
+                <div className="form-group">
+                  <label>Season</label>
+                  <div className="readonly-field">{climate.season}</div>
+                </div>
+                
+                <div className="form-group">
+                  <label>Date</label>
+                  <div className="readonly-field">{climate.date}</div>
+                </div>
+                
+                <div className="form-group">
+                  <label>Time</label>
+                  <div className="readonly-field">{climate.time}</div>
+                </div>
+                
+                <div className="form-group">
+                  <label>Temperature</label>
+                  <div className="readonly-field">
+                    {climate.temperature !== "" ? `${climate.temperature} °C` : "No data"}
+                  </div>
+                </div>
+                
+                <div className="form-group">
+                  <label>Humidity</label>
+                  <div className="readonly-field">
+                    {climate.humidity !== "" ? `${climate.humidity} %` : "No data"}
+                  </div>
+                </div>
+              </div>
 
-            <input
-              type="text"
-              value={
-                climate.temperature !== ""
-                  ? `${climate.temperature} °C`
-                  : "No data"
-              }
-              readOnly
-            />
-            <input
-              type="text"
-              value={
-                climate.humidity !== ""
-                  ? `${climate.humidity} %`
-                  : "No data"
-              }
-              readOnly
-            />
+              <div className="form-group">
+                <label htmlFor="ph">Soil pH Level</label>
+                <input
+                  id="ph"
+                  name="ph"
+                  type="number"
+                  step="any"
+                  placeholder="Enter soil pH (0-14)"
+                  min="0"
+                  max="14"
+                  required
+                />
+              </div>
 
-            <input
-              name="ph"
-              type="number"
-              step="any"
-              placeholder="Soil pH"
-              required
-            />
-            <input
-              name="avg_water"
-              type="number"
-              step="any"
-              placeholder="Avg Water (L/ha)"
-              required
-            />
+              <div className="form-group">
+                <label htmlFor="avg_water">Average Water (L/ha)</label>
+                <input
+                  id="avg_water"
+                  name="avg_water"
+                  type="number"
+                  step="any"
+                  placeholder="Enter water amount in liters per hectare"
+                  min="0"
+                  required
+                />
+              </div>
 
-            <button type="submit" disabled={loading || climateLoading}>
-              {loading ? "Predicting..." : "🔍 Predict Now"}
-            </button>
-          </form>
-        )}
+              <button 
+                type="submit" 
+                className="submit-button"
+                disabled={loading || climateLoading}
+              >
+                {loading ? (
+                  <>
+                    <span className="button-spinner"></span>
+                    Predicting...
+                  </>
+                ) : (
+                  <>
+                    <span className="button-icon">🔍</span>
+                    Predict Now
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );
 }
+

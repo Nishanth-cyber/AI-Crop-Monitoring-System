@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import "../styles/header.css"; // We'll create this CSS file
+import "../styles/header.css";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -25,12 +25,14 @@ export default function Header() {
         </Link>
 
         <div className={`nav-links ${isMenuOpen ? 'show' : ''}`}>
-          <Link to="/" className="nav-link" onClick={closeMobileMenu}>Home</Link>
-          <Link to="/predict" className="nav-link" onClick={closeMobileMenu}>Predictions</Link>
-          <Link to="/pest" className="nav-link" onClick={closeMobileMenu}>Pest Analysis</Link>
-          <Link to="/disease" className="nav-link" onClick={closeMobileMenu}>Disease Detection</Link>
-          <Link to="/crophea" className="nav-link" onClick={closeMobileMenu}>Crop Health</Link>
-          <Link to="/dashboard" className="nav-link" onClick={closeMobileMenu}>Dashboard</Link>
+          <div className="nav-main-links">
+            <Link to="/" className="nav-link" onClick={closeMobileMenu}>Home</Link>
+            <Link to="/predict" className="nav-link" onClick={closeMobileMenu}>Predictions</Link>
+            <Link to="/pest" className="nav-link" onClick={closeMobileMenu}>Pest Analysis</Link>
+            <Link to="/disease" className="nav-link" onClick={closeMobileMenu}>Disease Detection</Link>
+            <Link to="/crophea" className="nav-link" onClick={closeMobileMenu}>Crop Nutrient</Link>
+            <Link to="/dashboard" className="nav-link" onClick={closeMobileMenu}>Dashboard</Link>
+          </div>
           
           <div className="nav-auth">
             {username ? (
@@ -61,3 +63,4 @@ export default function Header() {
     </nav>
   );
 }
+

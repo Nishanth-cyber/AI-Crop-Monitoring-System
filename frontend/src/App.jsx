@@ -7,7 +7,7 @@ import PestAnalysis from "./components/Predictions/PestForm";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import ProtectedRoute from "./components/ProtectedRoute";
-import Crophealth from "./components/Predictions/Cropheath";
+import Crophealth from "./components/Predictions/Cropnutrient";
 
 function App() {
   return (

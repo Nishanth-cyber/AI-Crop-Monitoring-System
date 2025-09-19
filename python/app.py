@@ -111,13 +111,11 @@ class CropRequest(BaseModel):
     avg_water: float
 
 # ========== ROUTES ==========
+
 import requests
-from fastapi import FastAPI, Query
-from fastapi.responses import JSONResponse
+from fastapi import Query
 
-app = FastAPI()
-
-OPENWEATHER_API_KEY = "your_api_key_here"
+load_dotenv()
 
 
 # ✅ Predict crop water and harvest date
@@ -192,6 +190,7 @@ async def predict_pest(image: UploadFile = File(...)):
 @app.post("/predict_nutrient_deficiency")
 async def predict_nutrient_deficiency_video(video: UploadFile = File(...)):
     try:
+        import subprocess
         # Save uploaded video temporarily
         temp_input = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
         temp_input.write(await video.read())
@@ -204,11 +203,16 @@ async def predict_nutrient_deficiency_video(video: UploadFile = File(...)):
 
         # Open video
         cap = cv2.VideoCapture(temp_input.name)
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        fourcc = cv2.VideoWriter_fourcc(*'avc1')  # Try H.264 for browser compatibility
         fps = cap.get(cv2.CAP_PROP_FPS)
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         out = cv2.VideoWriter(temp_output_path, fourcc, fps, (width, height))
+
+        if not out.isOpened():
+            # Fallback to mp4v if avc1 fails
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            out = cv2.VideoWriter(temp_output_path, fourcc, fps, (width, height))
 
         while True:
             ret, frame = cap.read()
@@ -237,8 +241,26 @@ async def predict_nutrient_deficiency_video(video: UploadFile = File(...)):
         cap.release()
         out.release()
 
+        # Check if output video is valid
+        if not os.path.exists(temp_output_path) or os.path.getsize(temp_output_path) == 0:
+            raise HTTPException(status_code=500, detail="Processed video is empty or corrupted.")
+
+        # Re-encode with ffmpeg to H.264 for browser compatibility
+        ffmpeg_output_path = os.path.join(tempfile.gettempdir(), f"ffmpeg_{temp_output_name}")
+        ffmpeg_cmd = [
+            "ffmpeg", "-y", "-i", temp_output_path,
+            "-c:v", "libx264", "-preset", "fast", "-pix_fmt", "yuv420p",
+            ffmpeg_output_path
+        ]
+        try:
+            subprocess.run(ffmpeg_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            final_output_path = ffmpeg_output_path
+        except Exception as ffmpeg_error:
+            print("ffmpeg re-encode failed:", ffmpeg_error)
+            final_output_path = temp_output_path
+
         # Return processed video with timestamped filename
-        return FileResponse(temp_output_path, media_type='video/mp4', filename=temp_output_name)
+        return FileResponse(final_output_path, media_type='video/mp4', filename=os.path.basename(final_output_path))
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
