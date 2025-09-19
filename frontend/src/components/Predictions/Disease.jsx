@@ -12,7 +12,7 @@ export default function PestForm() {
     const formData = new FormData();
     formData.append("image", file);
 
-    const response = await fetch("http://localhost:8000/predict_pest", {
+    const response = await fetch("http://localhost:8000/disease-prediction", {
       method: "POST",
       body: formData,
     });
