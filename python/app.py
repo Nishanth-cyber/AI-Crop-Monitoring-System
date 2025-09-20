@@ -69,7 +69,7 @@ try:
     }
 
     # Load TensorFlow disease prediction model
-    disease_model_path = os.path.join(MODEL_DIR, "model.h5")
+    disease_model_path = os.path.join(MODEL_DIR, "CNN_model.h5")
     model_disease = tf.keras.models.load_model(disease_model_path)
 
     # Disease class labels
@@ -271,29 +271,36 @@ async def predict_nutrient_deficiency_video(video: UploadFile = File(...)):
 @app.post("/disease-prediction")
 async def predict_disease(image: UploadFile = File(...)):
     try:
-        # Validate file type
-        if not image.filename.lower().endswith(("png", "jpg", "jpeg")):
-            raise HTTPException(status_code=400, detail="Invalid file type")
+            # Check if an image is uploaded
+            if "image" not in request.files:
+                return jsonify({"error": "No file uploaded"}), 400
 
-        # Read image file into memory
-        img_bytes = await image.read()
-        img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-        img = img.resize((128, 128))  # Resize to model expected input
-        img_array = np.array(img) / 255.0
-        img_array = np.expand_dims(img_array, axis=0).astype("float32")  # Shape: (1, 128, 128, 3)
+            file = request.files["image"]
 
-        # Model prediction
-        prediction = model_disease.predict(img_array)
-        predicted_class = int(np.argmax(prediction))
-        predicted_label = disease_class_labels.get(predicted_class, "Unknown Disease")
+            # Validate file type
+            if file.filename == "" or not file.filename.lower().endswith(("png", "jpg", "jpeg")):
+                return jsonify({"error": "Invalid file type"}), 400
 
-        # Gemini explanation
-        explanation = chat_bot(predicted_label)
+            # Read image file into memory
+            img = Image.open(io.BytesIO(file.read())).convert("RGB")
+            img = img.resize((100, 100)) 
+            img_array = np.array(img) / 255.0  
+            img_array = np.expand_dims(img_array, axis=0).astype("float32")  # Expand dims for model input
 
-        return JSONResponse(content={
-            "disease": predicted_label,
-            "explanation": explanation
-        })
+            print("Image array shape:", img_array.shape)
+
+            prediction = model_disease.predict(img_array)
+            predicted_class = int(np.argmax(prediction))  
+
+            predicted_label = class_labels.get(predicted_class, "Unknown Disease")
+
+            # Gemini explanation
+            explanation = chat_bot(predicted_label)
+
+            return JSONResponse(content={
+                "disease": predicted_label,
+                "explanation": explanation
+            })
     except Exception as e:
         print("Error in /disease-prediction:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
