@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import '../styles/auth.css';
 
 const Signup = () => {
   const [form, setForm] = useState({
-    username: "", // Change from name to username
+    username: "", 
     email: "",
     password: "",
   });
@@ -17,7 +18,7 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:5001/user/register", { // Change /users/ to /user/
+      const res = await fetch("http://localhost:5001/user/register", { 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -36,36 +37,37 @@ const Signup = () => {
   };
 
   return (
-    <div className="auth-container">
-      <h2>Sign Up</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="username" // Change name to username
-          placeholder="Username"
-          value={form.username}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-          required
-        />
-        <button type="submit">Sign Up</button>
-      </form>
-      {message && <p>{message}</p>}
+    <div className="auth-page">
+          <div className="auth-container">
+          <h2>Sign Up</h2>
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="form-group">
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="Email"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                  <input
+                  type="password"
+                  name="password"
+                  placeholder="Password"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
+                />
+                </div>
+                
+                <div className="form-group">
+                   <button type="submit">Sign Up</button>
+                </div>
+          </form>
+          {message && <p>{message}</p>}
+        </div>
     </div>
   );
 };
