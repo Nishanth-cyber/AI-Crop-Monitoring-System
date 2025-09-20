@@ -45,7 +45,7 @@ function getSeason(month) {
   if ([12, 1, 2].includes(month)) return "winter";
   if ([3, 4, 5].includes(month)) return "spring";
   if ([6, 7, 8].includes(month)) return "summer";
-  return "autumn";
+  return "rainy";
 }
 
 module.exports = router;

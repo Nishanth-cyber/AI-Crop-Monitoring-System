@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import img6 from "../../assets/Img_6.jpeg";
-import "./cropform.css"; // We'll create this CSS file
+import "./cropform.css";
 
 export default function CropForm() {
   const [loading, setLoading] = useState(false);
@@ -13,15 +13,7 @@ export default function CropForm() {
   });
   const [climateLoading, setClimateLoading] = useState(true);
 
-  // Determine season from month
-  const getSeason = (month) => {
-    if ([12, 1, 2].includes(month)) return "Winter";
-    if ([3, 4, 5].includes(month)) return "Spring";
-    if ([6, 7, 8].includes(month)) return "Summer";
-    return "Autumn";
-  };
-
-  // Auto-fetch climate + auto-fill season/date
+  // Auto-fetch climate (from backend only)
   useEffect(() => {
     if (!navigator.geolocation) {
       console.error("❌ Geolocation not supported");
@@ -41,18 +33,12 @@ export default function CropForm() {
           const data = await res.json();
           console.log("🌡 Climate API response:", data);
 
-          // Get season + date/time
-          const now = new Date();
-          const season = getSeason(now.getMonth() + 1);
-          const today = now.toISOString().split("T")[0]; // YYYY-MM-DD
-          const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
           setClimate({
             temperature: data.temperature || "",
             humidity: data.humidity || "",
-            season,
-            date: today,
-            time,
+            season: data.season || "", // ✅ directly use backend season
+            date: data.date || "",     // ✅ directly use backend date
+            time: data.time || "",     // ✅ directly use backend time
           });
         } catch (err) {
           console.error("❌ Fetch error:", err);
@@ -132,12 +118,12 @@ export default function CropForm() {
             <form onSubmit={predictCrop} className="crop-form">
               <div className="form-group">
                 <label htmlFor="crop">Crop Name</label>
-                <input 
+                <input
                   id="crop"
-                  name="crop" 
-                  type="text" 
-                  placeholder="Enter crop name" 
-                  required 
+                  name="crop"
+                  type="text"
+                  placeholder="Enter crop name"
+                  required
                 />
               </div>
 
@@ -146,24 +132,24 @@ export default function CropForm() {
                   <label>Season</label>
                   <div className="readonly-field">{climate.season}</div>
                 </div>
-                
+
                 <div className="form-group">
                   <label>Date</label>
                   <div className="readonly-field">{climate.date}</div>
                 </div>
-                
+
                 <div className="form-group">
                   <label>Time</label>
                   <div className="readonly-field">{climate.time}</div>
                 </div>
-                
+
                 <div className="form-group">
                   <label>Temperature</label>
                   <div className="readonly-field">
                     {climate.temperature !== "" ? `${climate.temperature} °C` : "No data"}
                   </div>
                 </div>
-                
+
                 <div className="form-group">
                   <label>Humidity</label>
                   <div className="readonly-field">
@@ -199,8 +185,8 @@ export default function CropForm() {
                 />
               </div>
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="submit-button"
                 disabled={loading || climateLoading}
               >
@@ -223,4 +209,3 @@ export default function CropForm() {
     </div>
   );
 }
-
