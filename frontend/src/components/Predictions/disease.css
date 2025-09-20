@@ -1,4 +1,4 @@
-/* DiseaseDetection.css */
+/* disease.css */
 .disease-detection-container {
   display: flex;
   justify-content: center;
@@ -6,7 +6,7 @@
   min-height: 100vh;
   padding: 20px;
   background: linear-gradient(135deg, #f3f7f0 0%, #e3f2e5 100%);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Times New Roman', Times, serif;
 }
 
 .disease-form-card {
@@ -45,6 +45,7 @@
 .image-overlay h2 {
   margin: 0 0 8px 0;
   font-size: 1.5rem;
+  font-weight: 600;
 }
 
 .image-overlay p {
@@ -66,11 +67,13 @@
   margin: 0 0 10px 0;
   color: #2c3e50;
   font-size: 1.8rem;
+  font-weight: 600;
 }
 
 .form-header p {
   margin: 0;
   color: #7f8c8d;
+  font-size: 1rem;
 }
 
 .disease-form {
@@ -112,6 +115,7 @@
 .upload-text {
   color: #27ae60;
   font-weight: 500;
+  font-size: 1rem;
 }
 
 .file-input {
@@ -129,6 +133,7 @@
   margin: 0 0 15px 0;
   color: #2c3e50;
   font-size: 1.2rem;
+  font-weight: 600;
 }
 
 .image-preview {
@@ -142,6 +147,7 @@
 .image-preview img {
   width: 100%;
   display: block;
+  height: auto;
 }
 
 .detect-button {
@@ -158,6 +164,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
+  font-family: 'Times New Roman', Times, serif;
 }
 
 .detect-button:hover:not(:disabled) {
@@ -202,12 +209,14 @@
   color: #2c3e50;
   text-align: center;
   font-size: 1.4rem;
+  font-weight: 600;
 }
 
 .result-content {
   display: grid;
   grid-template-columns: 1fr;
   gap: 20px;
+  margin-bottom: 20px;
 }
 
 .disease-info, .explanation-info {
@@ -215,19 +224,19 @@
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  text-align: center;
 }
 
 .info-icon {
   font-size: 1.8rem;
   margin-bottom: 10px;
-  text-align: center;
 }
 
 .disease-info h5, .explanation-info h5 {
   margin: 0 0 10px 0;
   color: #2c3e50;
   font-size: 1.1rem;
-  text-align: center;
+  font-weight: 600;
 }
 
 .disease-name {
@@ -235,14 +244,22 @@
   color: #e74c3c;
   font-weight: 600;
   font-size: 1.2rem;
-  text-align: center;
 }
 
 .disease-explanation {
   margin: 0;
   color: #7f8c8d;
   line-height: 1.6;
-  text-align: justify;
+  text-align: left;
+}
+
+.disease-explanation p {
+  margin: 0 0 10px 0;
+  font-size: 0.95rem;
+}
+
+.disease-explanation p:last-child {
+  margin-bottom: 0;
 }
 
 /* Responsive Design */
@@ -270,6 +287,10 @@
   .image-preview {
     max-width: 100%;
   }
+  
+  .disease-info, .explanation-info {
+    text-align: left;
+  }
 }
 
 @media (max-width: 767px) {
@@ -292,18 +313,45 @@
   .file-upload-label {
     padding: 20px;
   }
-}
-
-@media (max-width: 480px) {
+  
   .disease-result {
     padding: 15px;
   }
   
-  .disease-info, .explanation-info {
+  .disease-info1 {
     padding: 15px;
+    width: 100%;
+  }
+  
+  .explanation-info {
+    padding: 15px;
+    width: 100%;
   }
   
   .disease-name {
     font-size: 1.1rem;
+    width: 200px;
   }
 }
+
+@media (max-width: 480px) {
+  .disease-result h4 {
+    font-size: 1.2rem;
+  }
+  
+  .disease-info h5, .explanation-info h5 {
+    font-size: 1rem;
+  }
+  
+  .disease-explanation p {
+    font-size: 0.9rem;
+  }
+}
+
+/* Focus styles for accessibility */
+.file-input:focus + .file-upload-label,
+.detect-button:focus {
+  outline: 2px solid #27ae60;
+  outline-offset: 2px;
+}
+

@@ -278,17 +278,24 @@ async def predict_disease(image: UploadFile = File(...)):
         # Read image file into memory
         img_bytes = await image.read()
         img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-        img = img.resize((100, 100))
+        img = img.resize((128, 128))  # Resize to model expected input
         img_array = np.array(img) / 255.0
-        img_array = np.expand_dims(img_array, axis=0).astype("float32")
+        img_array = np.expand_dims(img_array, axis=0).astype("float32")  # Shape: (1, 128, 128, 3)
 
+        # Model prediction
         prediction = model_disease.predict(img_array)
         predicted_class = int(np.argmax(prediction))
         predicted_label = disease_class_labels.get(predicted_class, "Unknown Disease")
-        explain = chat_bot(predicted_label)
 
-        return JSONResponse(content={"disease": predicted_label, "explain": explain})
+        # Gemini explanation
+        explanation = chat_bot(predicted_label)
+
+        return JSONResponse(content={
+            "disease": predicted_label,
+            "explanation": explanation
+        })
     except Exception as e:
+        print("Error in /disease-prediction:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 def chat_bot(dis):

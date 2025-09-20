@@ -110,15 +110,19 @@ export default function DiseaseDetection() {
             <div className="disease-result">
               <h4>Detection Results</h4>
               <div className="result-content">
-                <div className="disease-info">
+                <div className="disease-info1">
                   <div className="info-icon">🌡️</div>
                   <h5>Disease Identified</h5>
                   <p className="disease-name">{result.disease}</p>
                 </div>
-                <div className="explanation-info">
-                  <div className="info-icon">📝</div>
-                  <h5>Explanation</h5>
-                  <p className="disease-explanation">{result.explain}</p>
+              </div>
+              <div className="explanation-info">
+                <div className="info-icon">📝</div>
+                <h5>Explanation (5 lines)</h5>
+                <div className="disease-explanation">
+                  {result.explanation && result.explanation.split(/\r?\n/).map((line, idx) => (
+                    <p key={idx}>{line}</p>
+                  ))}
                 </div>
               </div>
             </div>
