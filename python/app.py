@@ -69,7 +69,7 @@ try:
     }
 
     # Load TensorFlow disease prediction model
-    disease_model_path = os.path.join(MODEL_DIR, "crop_disease.h5")
+    disease_model_path = os.path.join(MODEL_DIR, "model.h5")
     model_disease = tf.keras.models.load_model(disease_model_path)
 
     # Disease class labels
